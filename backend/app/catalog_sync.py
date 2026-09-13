@@ -3,6 +3,48 @@ from sqlalchemy.orm import Session
 from .models import case, case_item, item
 from .db.session import engine
 
+
+BASE_ITEMS = [
+    ("AK-47 | Redline", "AK", "Classified", 350.0, "/images/items/ak_redline.png", 0.15, "#bf0d3e"),
+    ("AK-47 | Vulcan", "AK", "Classified", 420.0, "/images/items/ak_vulcan.png", 0.08, "#bf0d3e"),
+    ("AK-47 | Fire Serpent", "AK", "Covert", 850.0, "/images/items/ak_fire_serpent.png", 0.12, "#bf0d3e"),
+    ("AK-47 | Neon Rider", "AK", "Classified", 280.0, "/images/items/ak_neon_rider.png", 0.05, "#bf0d3e"),
+    ("AK-47 | Jaguar", "AK", "Restricted", 180.0, "/images/items/ak_jaguar.png", 0.22, "#bf0d3e"),
+    ("M4A4 | Howl", "M4", "Contraband", 1200.0, "/images/items/m4_howl.png", 0.03, "#9b59b6"),
+    ("M4A1-S | Hyper Beast", "M4", "Classified", 380.0, "/images/items/m4_hyper_beast.png", 0.11, "#9b59b6"),
+    ("M4A4 | Neo-Noir", "M4", "Classified", 290.0, "/images/items/m4_neo_noir.png", 0.07, "#9b59b6"),
+    ("M4A1-S | Guardian", "M4", "Restricted", 160.0, "/images/items/m4_guardian.png", 0.18, "#9b59b6"),
+    ("AWP | Dragon Lore", "AWP", "Contraband", 2500.0, "/images/items/awp_dragon_lore.png", 0.05, "#e74c3c"),
+    ("AWP | Asiimov", "AWP", "Classified", 220.0, "/images/items/awp_asiimov.png", 0.15, "#e74c3c"),
+    ("AWP | Medusa", "AWP", "Covert", 950.0, "/images/items/awp_medusa.png", 0.09, "#e74c3c"),
+    ("AWP | Lightning Strike", "AWP", "Classified", 180.0, "/images/items/awp_lightning_strike.png", 0.12, "#e74c3c"),
+    ("Desert Eagle | Blaze", "Desert Eagle", "Classified", 210.0, "/images/items/deagle_blaze.png", 0.14, "#e67e22"),
+    ("Desert Eagle | Crimson Web", "Desert Eagle", "Restricted", 85.0, "/images/items/deagle_crimson_web.png", 0.08, "#e67e22"),
+    ("Glock-18 | Fade", "Glock", "Classified", 190.0, "/images/items/glock_fade.png", 0.06, "#e67e22"),
+    ("USP-S | Kill Confirmed", "USP", "Classified", 150.0, "/images/items/usp_kill_confirmed.png", 0.11, "#e67e22"),
+    ("Karambit | Fade", "knife", "Covert", 1800.0, "/images/items/karambit_fade.png", 0.18, "#9b59b6"),
+    ("M9 Bayonet | Crimson Web", "knife", "Covert", 850.0, "/images/items/m9_crimson_web.png", 0.22, "#9b59b6"),
+    ("Butterfly Knife | Doppler", "knife", "Covert", 1200.0, "/images/items/butterfly_doppler.png", 0.15, "#9b59b6"),
+    ("Sport Gloves | Pandora's Box", "gloves", "Extraordinary", 320.0, "/images/items/sport_pandora.png", 0.18, "#f39c12"),
+    ("Driver Gloves | Imperial Plaid", "gloves", "Extraordinary", 280.0, "/images/items/driver_imperial.png", 0.15, "#f39c12"),
+]
+
+BASE_CASES = [
+    ("Beginner Case", "Une caisse accessible pour démarrer, avec des drops classiques.", 100.0, "/images/cases/beginner.png", "#3498db"),
+    ("Advanced Case", "Un palier supérieur avec des skins plus rares.", 500.0, "/images/cases/advanced.png", "#9b59b6"),
+    ("Elite Case", "La caisse haut de gamme pour les gros drops.", 1000.0, "/images/cases/elite.png", "#e74c3c"),
+    ("AK Specialist Case", "Dédiée aux amateurs d'AK-47.", 750.0, "/images/cases/ak_specialist.png", "#e67e22"),
+    ("AWP Specialist Case", "Dédiée aux amateurs d'AWP.", 800.0, "/images/cases/awp_specialist.png", "#f39c12"),
+]
+
+BASE_CASE_REWARDS = {
+    "Beginner Case": [("AK-47 | Jaguar",42), ("M4A1-S | Guardian",34), ("Desert Eagle | Crimson Web",18), ("USP-S | Kill Confirmed",5), ("AK-47 | Redline",1)],
+    "Advanced Case": [("AK-47 | Redline",25), ("AK-47 | Vulcan",20), ("M4A1-S | Hyper Beast",20), ("M4A4 | Neo-Noir",15), ("AWP | Asiimov",10), ("Glock-18 | Fade",10)],
+    "Elite Case": [("AK-47 | Fire Serpent",30), ("AWP | Dragon Lore",22), ("Desert Eagle | Blaze",18), ("Karambit | Fade",15), ("M9 Bayonet | Crimson Web",10), ("Butterfly Knife | Doppler",5), ("Sport Gloves | Pandora's Box",3), ("Driver Gloves | Imperial Plaid",3)],
+    "AK Specialist Case": [("AK-47 | Redline",30), ("AK-47 | Vulcan",25), ("AK-47 | Fire Serpent",20), ("AK-47 | Neon Rider",15), ("AK-47 | Jaguar",10)],
+    "AWP Specialist Case": [("AWP | Dragon Lore",20), ("AWP | Medusa",20), ("AWP | Asiimov",25), ("AWP | Lightning Strike",35)],
+}
+
 NEW_ITEMS = [
     ("AK-47 | Head Shot", "AK", "Covert", 1600.0, "/images/items/ak_head_shot.png", 0.08, "#ef4444"),
     ("M4A1-S | Printstream", "M4", "Covert", 2800.0, "/images/items/m4_printstream.png", 0.07, "#a855f7"),
@@ -20,39 +62,6 @@ NEW_CASES = [
     ("Supreme Case", "Le haut de gamme WellCase : jackpot très rare et pool premium.", 5000.0, "/images/cases/supreme.png", "#f59e0b", [("M4A4 | Howl",30),("AWP | Dragon Lore",24),("Sport Gloves | Vice",20),("M9 Bayonet | Doppler",13),("Karambit | Gamma Doppler",8),("AWP | Gungnir",4),("M4A1-S | Printstream",1)]),
 ]
 
-WEAPON_TYPE_CASES = [
-    ('Pistol Arsenal Case', 'Une caisse dédiée aux pistolets, des drops abordables aux pièces les plus rares.', 320.0, '/images/cases/type_pistols.png', '#f59e0b', 'Pistols'),
-    ('Rifle Arsenal Case', 'Une caisse dédiée aux fusils d’assaut avec un pool compétitif.', 900.0, '/images/cases/type_rifles.png', '#22d3ee', 'Assault Rifles'),
-    ('Sniper Arsenal Case', 'Une caisse de snipers où les gros AWP restent exceptionnels.', 1100.0, '/images/cases/type_snipers.png', '#60a5fa', 'Snipers'),
-    ('Knife Arsenal Case', 'Réservée aux couteaux, avec les modèles les plus rares en jackpot.', 2400.0, '/images/cases/type_knives.png', '#a855f7', 'Knives'),
-    ('Gloves Arsenal Case', 'Réservée aux gants et à leurs finitions premium.', 1600.0, '/images/cases/type_gloves.png', '#ec4899', 'Gloves'),
-]
-RARITY_WEIGHTS = {
-    'Mil-Spec': 58.0,
-    'Restricted': 28.0,
-    'Classified': 10.0,
-    'Covert': 3.2,
-    'Contraband': 0.7,
-    'Extraordinary': 0.1,
-    'Legendary': 0.3,
-    'Mythic': 0.1,
-}
-
-def _build_type_case_rewards(items, weapon_class):
-    pool=[obj for obj in items if obj.is_active and obj.weapon_class==weapon_class]
-    if not pool:
-        return []
-    raw=[]
-    for obj in sorted(pool, key=lambda x: (float(x.virtual_value or 0), x.name.lower())):
-        rarity_weight=RARITY_WEIGHTS.get(str(obj.rarity), 1.0)
-        value=float(obj.virtual_value or 0)
-        # Keep cheap items accessible while pushing expensive/legendary drops down.
-        value_factor=max(0.35, min(1.0, 250.0/max(value,250.0)))
-        raw_weight=rarity_weight*value_factor
-        raw.append((obj.name, raw_weight))
-    total=sum(w for _,w in raw) or 1.0
-    return [(name, weight/total*100.0) for name,weight in raw]
-
 def migrate_compatibility():
     inspector=inspect(engine); tables=inspector.get_table_names()
     if 'users' not in tables:return
@@ -61,8 +70,81 @@ def migrate_compatibility():
     with engine.begin() as conn:
         for name,ddl in additions.items():
             if name not in cols: conn.execute(text(f'ALTER TABLE users ADD COLUMN {name} {ddl}'))
+    if 'inventory' in tables:
+        inventory_cols={c['name'] for c in inspector.get_columns('inventory')}
+        with engine.begin() as conn:
+            if 'upgrade_level' not in inventory_cols:
+                conn.execute(text('ALTER TABLE inventory ADD COLUMN upgrade_level INTEGER DEFAULT 0 NOT NULL'))
+            if 'condition' not in inventory_cols:
+                conn.execute(text("ALTER TABLE inventory ADD COLUMN condition TEXT DEFAULT 'État moyen' NOT NULL"))
+    if 'market_listings' in tables:
+        market_cols={c['name'] for c in inspector.get_columns('market_listings')}
+        with engine.begin() as conn:
+            if 'condition' not in market_cols:
+                conn.execute(text("ALTER TABLE market_listings ADD COLUMN condition TEXT DEFAULT 'État moyen' NOT NULL"))
+def _sync_case_relations(db, row, items_by_name, rewards):
+    relations=db.query(case_item.CaseItem).filter(case_item.CaseItem.case_id==row.id).all()
+    by_item_id={r.item_id:r for r in relations}
+    total=sum(float(p) for _,p in rewards) or 1.0
+    desired=set()
+    for item_name, prob in rewards:
+        obj=items_by_name.get(item_name)
+        if not obj:
+            continue
+        desired.add(obj.id)
+        normalized=float(prob)/total*100.0
+        rel=by_item_id.get(obj.id)
+        if rel is None:
+            db.add(case_item.CaseItem(case_id=row.id,item_id=obj.id,probability=normalized))
+        elif abs(float(rel.probability or 0)-normalized)>.0001:
+            rel.probability=normalized
+    for rel in relations:
+        if rel.item_id not in desired:
+            db.delete(rel)
+
+def _deactivate_retired_cases(db: Session):
+    """Hide retired case families from the catalogue.
+
+    Arsenal cases are intentionally retired and must never be recreated by the
+    catalogue synchronizer, even when they already exist in a persistent DB.
+    Legacy knife cases remain hidden as before.
+    """
+    rows = db.query(case.Case).filter(case.Case.is_active.is_(True)).all()
+    changed = False
+    for row in rows:
+        name = str(row.name or '').strip().lower()
+        if 'arsenal' in name or name in {'knife case', 'solid knife case', 'gloves case'}:
+            row.is_active = False
+            changed = True
+    return changed
+
 def sync_catalog(db:Session):
     changed=False; items_by_name={x.name:x for x in db.query(item.Item).all()}
+    if _deactivate_retired_cases(db): changed=True
+    # Repair/seed the original catalogue too. This is important on a brand-new
+    # Render/Postgres database where the old init script was never run.
+    for name,category,rarity,value,image,flt,color in BASE_ITEMS:
+        obj=items_by_name.get(name)
+        if obj is None:
+            obj=item.Item(name=name,category=category,weapon_class=_weapon_class_for(type('X', (), {'category':category,'name':name})()),rarity=rarity,virtual_value=value,image_url=image,float_value=flt,color=color,is_active=True); db.add(obj); db.flush(); items_by_name[name]=obj; changed=True
+        else:
+            updates={'category':category,'weapon_class':_weapon_class_for(type('X', (), {'category':category,'name':name})()),'rarity':rarity,'virtual_value':value,'image_url':image,'float_value':flt,'color':color,'is_active':True}
+            for key,val in updates.items():
+                if getattr(obj,key)!=val:
+                    setattr(obj,key,val); changed=True
+    for name,desc,price,image,color in BASE_CASES:
+        row=db.query(case.Case).filter(case.Case.name==name).first()
+        if row is None:
+            row=case.Case(name=name,description=desc,price=price,image_url=image,color=color,is_active=True); db.add(row); db.flush(); changed=True
+        else:
+            for key,val in {'description':desc,'price':price,'image_url':image,'color':color,'is_active':True}.items():
+                if getattr(row,key)!=val:
+                    setattr(row,key,val); changed=True
+        before=len(db.query(case_item.CaseItem).filter(case_item.CaseItem.case_id==row.id).all())
+        _sync_case_relations(db,row,items_by_name,BASE_CASE_REWARDS[name])
+        after=len(db.query(case_item.CaseItem).filter(case_item.CaseItem.case_id==row.id).all())
+        if before != after: changed=True
+
     for name,category,rarity,value,image,flt,color in NEW_ITEMS:
         obj=items_by_name.get(name)
         if obj is None:
@@ -76,34 +158,6 @@ def sync_catalog(db:Session):
             obj.weapon_class=desired_class
             changed=True
 
-    existing={x.name:x for x in db.query(case.Case).all()}
-    # One focused case per weapon class. The pools are built from the actual live catalog,
-    # so the case automatically stays synchronized when new skins are added.
-    for name, desc, price, image, color, weapon_class in WEAPON_TYPE_CASES:
-        row=existing.get(name)
-        if row is None:
-            row=case.Case(name=name,description=desc,price=price,image_url=image,color=color,is_active=True)
-            db.add(row); db.flush(); existing[name]=row; changed=True
-        else:
-            for key,val in {'description':desc,'price':price,'image_url':image,'color':color,'is_active':True}.items():
-                if getattr(row,key)!=val:
-                    setattr(row,key,val); changed=True
-        rewards=_build_type_case_rewards(list(items_by_name.values()), weapon_class)
-        relations=db.query(case_item.CaseItem).filter(case_item.CaseItem.case_id==row.id).all()
-        by_item_id={r.item_id:r for r in relations}
-        desired=set()
-        for item_name, prob in rewards:
-            obj=items_by_name.get(item_name)
-            if not obj: continue
-            desired.add(obj.id)
-            rel=by_item_id.get(obj.id)
-            if rel is None:
-                db.add(case_item.CaseItem(case_id=row.id,item_id=obj.id,probability=float(prob))); changed=True
-            elif abs(float(rel.probability or 0)-float(prob))>.0001:
-                rel.probability=float(prob); changed=True
-        for rel in relations:
-            if rel.item_id not in desired:
-                db.delete(rel); changed=True
     existing={x.name:x for x in db.query(case.Case).all()}
     for name,desc,price,image,color,rewards in NEW_CASES:
         row=existing.get(name)

@@ -10,3 +10,4 @@ html:has(.opening-animation-container)::-webkit-scrollbar{display:none}
 .opening-animation-container{overflow:hidden!important}
 
 .opening-secured-line{margin-top:9px;color:#718096;font-size:8px;letter-spacing:.06em}.opening-secured-line b{color:#d7dee9}
+.opening-item-probability{display:block;margin-top:2px;color:#aab6c5;font-size:9px;font-weight:800;letter-spacing:.04em}

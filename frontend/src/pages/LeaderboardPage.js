@@ -39,7 +39,7 @@ const LeaderboardPage = () => {
           const rank = row.rank;
           return <article key={row.userId} className={`podium-card rank-${rank} ${user?.id === row.userId ? 'me' : ''}`}>
             <div className="podium-medal">{medal[rank - 1]}</div><span className="podium-rank">#{rank}</span>
-            <h2 style={{color: row.name_color || undefined}}>{row.username}</h2><strong>{row.xp.toLocaleString('fr-FR')} XP</strong><small>Niveau {row.level}</small>
+            <h2 style={{color: row.name_color || undefined}}>{row.username}</h2>{row.cosmetic_badge && <span className="podium-badge">{row.cosmetic_badge}</span>}<strong>{row.xp.toLocaleString('fr-FR')} XP</strong><small>Niveau {row.level}</small>
             <div className="podium-stats"><span>{row.casesOpened} caisses</span><span>{row.upgrades} upgrades</span></div>
           </article>;
         })}
@@ -48,7 +48,7 @@ const LeaderboardPage = () => {
       <section className="leaderboard-table">
         <div className="leaderboard-table-head"><span>RANG</span><span>JOUEUR</span><span>NIVEAU</span><span>ACTIVITÉ</span><span>XP</span></div>
         {rows.map((row) => <div className={`leaderboard-row ${user?.id === row.userId ? 'me' : ''}`} key={row.userId}>
-          <b className="rank-number">#{row.rank}</b><div className="player-cell"><ImageWithFallback src={row.avatar_url} alt="" className="player-avatar" /><div><strong style={{color: row.name_color || undefined}}>{row.username}</strong>{user?.id === row.userId && <small>{user?.id===row.userId?'TOI':(row.cosmetic_badge||'')}</small>}</div></div>
+          <b className="rank-number">#{row.rank}</b><div className="player-cell"><ImageWithFallback src={row.avatar_url} alt="" className="player-avatar" /><div><strong style={{color: row.name_color || undefined}}>{row.username}</strong><div className="player-meta">{row.cosmetic_badge && <span className="leaderboard-badge">{row.cosmetic_badge}</span>}{user?.id === row.userId && <small>TOI</small>}</div></div></div>
           <span className="level-pill">LVL {row.level}{row.prestige_level>0?` · P${row.prestige_level}`:''}</span><span className="activity-cell">{row.casesOpened} caisses · {row.upgrades} upgrades</span><strong className="xp-cell">{row.xp.toLocaleString('fr-FR')} XP</strong>
         </div>)}
         {!rows.length && <div className="leaderboard-empty">Aucune activité pour le moment.</div>}

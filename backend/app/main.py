@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import uvicorn
 from dotenv import load_dotenv
@@ -8,10 +9,13 @@ from fastapi.middleware.cors import CORSMiddleware
 load_dotenv()
 
 from app.db.base import Base
-from app.models import user, daily_quest, battle_pass, market_listing, item
+from app.models import (user, daily_quest, battle_pass, market_listing, item, case, case_item, case_opening, inventory, upgrade)
 from app.db.session import engine
 from app.catalog_sync import migrate_compatibility, sync_catalog, migrate_progression_columns
 from app.db.session import SessionLocal
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+FRONTEND_BUILD = PROJECT_ROOT / "frontend" / "build"
 
 app = FastAPI(title="WellCase API", description="Virtual case opening platform API", version="2.0.0")
 
@@ -53,6 +57,11 @@ def ensure_tables():
 
 @app.get("/")
 async def root():
+    # In the single-service Render build, the React shell is served from the
+    # same FastAPI origin. Keep the JSON response as a fallback for API-only runs.
+    if FRONTEND_BUILD.exists() and (FRONTEND_BUILD / "index.html").exists():
+        from fastapi.responses import FileResponse
+        return FileResponse(FRONTEND_BUILD / "index.html")
     return {"message": "Welcome to WellCase API"}
 
 @app.get("/health")
@@ -82,4 +91,13 @@ if __name__ == "__main__":
 app.include_router(admin.router, prefix="/admin", tags=["admin"])
 app.include_router(progression.router, prefix="/progression", tags=["progression"])
 app.include_router(market.router, prefix="/market", tags=["market"])
-app.include_router(collections.router, prefix="/collections", tags=["collections"]) 
+app.include_router(collections.router, prefix="/collections", tags=["collections"])
+
+# Single-service Render deployment: serve the compiled React app and its assets
+# from the same origin as FastAPI. This prevents stale /public paths and /api
+# routing mismatches on Render.
+if FRONTEND_BUILD.exists():
+    from fastapi.staticfiles import StaticFiles
+    app.mount("/images", StaticFiles(directory=str(FRONTEND_BUILD / "images")), name="images")
+    app.mount("/static", StaticFiles(directory=str(FRONTEND_BUILD / "static")), name="static")
+    app.mount("/", StaticFiles(directory=str(FRONTEND_BUILD), html=True), name="frontend")

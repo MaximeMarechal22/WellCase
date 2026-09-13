@@ -5,6 +5,7 @@ from ..db.session import SessionLocal
 from ..models import inventory, item, user
 from ..schemas import inventory as inventory_schema
 from ..core.security import get_current_active_user
+from ..condition_service import effective_value
 
 router = APIRouter()
 
@@ -70,7 +71,11 @@ async def sell_inventory_item(
     current_user: user.User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
-    """Sell exactly one owned item for 75% of its virtual value."""
+    """Sell exactly one owned item for 75% of its virtual value.
+
+    Reload the user in this route's SQLAlchemy session before changing the balance.
+    The authentication dependency can hold the user in a different session.
+    """
     db_inventory = (
         db.query(inventory.Inventory)
         .options(joinedload(inventory.Inventory.item))
@@ -82,22 +87,26 @@ async def sell_inventory_item(
     )
     if not db_inventory or not db_inventory.item:
         raise HTTPException(status_code=404, detail="Inventory item not found")
-    if db_inventory.quantity < 1:
+    if int(db_inventory.quantity or 0) < 1:
         raise HTTPException(status_code=400, detail="This item is no longer available")
+
+    db_user = db.query(user.User).filter(user.User.id == current_user.id).with_for_update().first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
 
     sold_item_id = db_inventory.item_id
     sold_item_name = db_inventory.item.name
-    item_value = float(db_inventory.item.virtual_value or 0)
+    item_value = effective_value(db_inventory.item.virtual_value, db_inventory.condition)
     sell_amount = round(item_value * 0.75, 2)
-    balance_before = float(current_user.virtual_balance)
+    balance_before = float(db_user.virtual_balance or 0)
 
     try:
         db_inventory.quantity -= 1
         if db_inventory.quantity <= 0:
             db.delete(db_inventory)
-        current_user.virtual_balance = balance_before + sell_amount
+        db_user.virtual_balance = balance_before + sell_amount
         db.commit()
-        db.refresh(current_user)
+        db.refresh(db_user)
     except Exception:
         db.rollback()
         raise HTTPException(status_code=500, detail="The item could not be sold.")
@@ -111,7 +120,7 @@ async def sell_inventory_item(
         "sell_rate": 75.0,
         "amount": sell_amount,
         "balance_before": balance_before,
-        "balance_after": float(current_user.virtual_balance),
+        "balance_after": float(db_user.virtual_balance),
     }
 
 

@@ -37,7 +37,7 @@ export default function AdminPage() {
   return <div className="admin-page">
     <div className="admin-hero">
       <div><div className="admin-eyebrow">WELLCASE CONTROL CENTER</div><h1>Administration</h1><p>Supervise la plateforme, les joueurs et l'activité en temps réel.</p></div>
-      <button className="admin-refresh" onClick={load}>↻ Actualiser</button>
+      <div className="admin-toolbar"><button className="admin-refresh" onClick={load}>↻ Actualiser</button><button className="admin-refresh" onClick={async()=>{try{await adminAPI.repairCatalog();setToast("Catalogue resynchronisé.");await load();}catch(e){setToast(e?.response?.data?.detail||"Impossible de resynchroniser le catalogue.");}}}>Réparer les caisses</button></div>
     </div>
     {toast && <div className="inline-notice admin-inline-notice">{toast}<button onClick={()=>setToast('')}>×</button></div>}
     {loading && !stats ? <div className="admin-loading">Chargement du centre de contrôle…</div> : <>

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
+<defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#040710"/><stop offset=".55" stop-color="#0d1726"/><stop offset="1" stop-color="#05070d"/></linearGradient>
+ <radialGradient id="glow" cx="70%" cy="55%" r="60%"><stop offset="0" stop-color="#f59e0b" stop-opacity=".38"/><stop offset="1" stop-color="#f59e0b" stop-opacity="0"/></radialGradient>
+ <linearGradient id="crate" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#1a2436"/><stop offset=".5" stop-color="#0a101b"/><stop offset="1" stop-color="#02060c"/></linearGradient>
+ <filter id="blur"><feGaussianBlur stdDeviation="24"/></filter>
+</defs>
+<rect width="1200" height="700" fill="url(#bg)"/>
+<rect width="1200" height="700" fill="url(#glow)"/>
+<ellipse cx="740" cy="565" rx="360" ry="75" fill="#f59e0b" opacity=".24" filter="url(#blur)"/>
+<g opacity=".7"><g transform="translate(570 270) rotate(-18)"><path d="M100 120 C210 20 390 45 520 110 C400 105 300 130 220 165 C170 188 132 170 100 120z" fill="#f59e0b" stroke="#a855f7" stroke-width="6"/><path d="M130 135 l-90 80 l18 18 l118-80z" fill="#111827" stroke="#f59e0b" stroke-width="5"/><path d="M330 135 l145 60 l-150-15z" fill="#e5e7eb" opacity=".75"/></g></g>
+<g transform="translate(120 330)">
+ <rect x="0" y="40" width="620" height="210" rx="28" fill="url(#crate)" stroke="#f59e0b" stroke-width="7"/>
+ <rect x="35" y="78" width="550" height="134" rx="18" fill="#0b1220" stroke="#a855f7" stroke-opacity=".55" stroke-width="3"/>
+ <rect x="264" y="66" width="90" height="160" rx="14" fill="#08101b" stroke="#f59e0b" stroke-width="4"/>
+ <path d="M278 105 h62 v42 h-62z" fill="#f59e0b" opacity=".16"/>
+ <text x="309" y="136" text-anchor="middle" font-family="Arial,sans-serif" font-size="32" font-weight="900" fill="#fff">W</text>
+ <text x="309" y="170" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" font-weight="700" letter-spacing="3" fill="#f59e0b">WELLCASE</text>
+ <rect x="20" y="12" width="580" height="24" rx="12" fill="#f59e0b" opacity=".28"/>
+</g>
+<text x="84" y="108" font-family="Arial,sans-serif" font-size="34" font-weight="900" letter-spacing="7" fill="#9aa4ff">WELLCASE / ARSENAL</text>
+<text x="84" y="190" font-family="Arial,sans-serif" font-size="56" font-weight="1000" letter-spacing="2" fill="#ffffff">KNIFE ARSENAL CASE</text>
+<text x="84" y="240" font-family="Arial,sans-serif" font-size="24" font-weight="600" fill="#9aa8bd">Couteaux · rareté maximale · gros jackpots</text>
+<rect x="84" y="610" width="520" height="8" rx="4" fill="#182235"/><rect x="84" y="610" width="390" height="8" rx="4" fill="#f59e0b"/>
+<text x="84" y="657" font-family="Arial,sans-serif" font-size="18" font-weight="800" letter-spacing="4" fill="#e8eef9">DROP SÉCURISÉ · OUVERTURE EN COURS…</text>
+<circle cx="1070" cy="90" r="46" fill="#f59e0b" opacity=".12"/><circle cx="1070" cy="90" r="30" fill="none" stroke="#f59e0b" stroke-width="4" opacity=".8"/>
+</svg>

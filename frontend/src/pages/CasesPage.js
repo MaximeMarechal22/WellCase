@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { casesAPI, openingsAPI, progressionAPI } from '../services/api';
 import CaseCard from '../components/CaseCard';
 import CaseOpeningAnimation from '../components/CaseOpeningAnimation';
+import CaseOpeningSplashUnified from '../components/CaseOpeningSplashUnified';
+import CasePreviewModal from '../components/CasePreviewModal';
 
 const CasesPage = () => {
   const { balance, updateBalance } = useAuth();
@@ -16,15 +18,26 @@ const CasesPage = () => {
   const [batchResults, setBatchResults] = useState([]);
   const [batchIndex, setBatchIndex] = useState(0);
   const [notice, setNotice] = useState('');
+  const [showCaseSplash, setShowCaseSplash] = useState(false);
+  const [splashCaseData, setSplashCaseData] = useState(null);
+  const [previewCase, setPreviewCase] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const splashTimerRef = useRef(null);
+
+  useEffect(() => () => clearTimeout(splashTimerRef.current), []);
 
   useEffect(() => {
     const fetchCases = async () => {
       try {
         const casesResponse = await casesAPI.getCases();
-        setCases(casesResponse.data);
+        const visibleCases = (Array.isArray(casesResponse.data) ? casesResponse.data : [])
+          .filter((item) => !String(item?.name || '').toLowerCase().includes('arsenal'))
+          .sort((a, b) => Number(a?.price || 0) - Number(b?.price || 0));
+        setCases(visibleCases);
         try { const p = await progressionAPI.getOverview(); setProgression(p.data); } catch (e) { console.warn('progression', e); }
       } catch (error) {
         console.error('Error fetching cases:', error);
+        setNotice(error.response?.data?.detail || 'Impossible de charger les caisses. Vérifie que le catalogue serveur est disponible.');
       } finally {
         setLoading(false);
       }
@@ -33,14 +46,41 @@ const CasesPage = () => {
     fetchCases();
   }, []);
 
+  const handlePreviewOpen = async (caseId) => {
+    const baseCase = cases.find((item) => Number(item.id) === Number(caseId)) || null;
+    if (!baseCase) { setNotice('Impossible de trouver cette caisse.'); return; }
+    setNotice('');
+    setPreviewLoading(true);
+    setPreviewCase({ ...baseCase, items: Array.isArray(baseCase.items) ? baseCase.items : [] });
+    try {
+      const response = await casesAPI.getCasePreview(caseId);
+      if (response?.data) setPreviewCase(response.data);
+    } catch (error) {
+      console.error('case preview', error);
+      setNotice(error.response?.data?.detail || 'Impossible de charger les taux de drop de cette caisse.');
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const handleOpenFromPreview = (caseId) => {
+    setPreviewCase(null);
+    handleOpenCase(caseId);
+  };
+
   const handleOpenCase = async (caseId) => {
     if (openingRequest) return;
+    const clickedCase = cases.find((item) => String(item.id) === String(caseId)) || null;
+    if (!clickedCase) { setNotice('Impossible de trouver cette caisse.'); return; }
+    setSplashCaseData(clickedCase);
     setOpeningRequest(true);
     try {
       const response = await openingsAPI.openCase(caseId);
       setOpeningResult(response.data);
       setAnimationCaseId(caseId);
-      setShowAnimation(true);
+      setShowCaseSplash(true);
+      clearTimeout(splashTimerRef.current);
+      splashTimerRef.current = setTimeout(() => { setShowCaseSplash(false); setSplashCaseData(null); setShowAnimation(true); }, 2200);
     } catch (error) {
       setNotice(error.response?.data?.detail || error.message || "Impossible d'ouvrir la caisse.");
     } finally {
@@ -51,6 +91,9 @@ const CasesPage = () => {
 
   const handleMultiOpen = async (caseId, count) => {
     if (openingRequest) return;
+    const clickedCase = cases.find((item) => String(item.id) === String(caseId)) || null;
+    if (!clickedCase) { setNotice('Impossible de trouver cette caisse.'); return; }
+    setSplashCaseData(clickedCase);
     setOpeningRequest(true);
     try {
       const response = await openingsAPI.openBatch(caseId, count);
@@ -58,7 +101,9 @@ const CasesPage = () => {
       setBatchIndex(0);
       setOpeningResult(response.data.results?.[0] || null);
       setAnimationCaseId(caseId);
-      setShowAnimation(true);
+      setShowCaseSplash(true);
+      clearTimeout(splashTimerRef.current);
+      splashTimerRef.current = setTimeout(() => { setShowCaseSplash(false); setSplashCaseData(null); setShowAnimation(true); }, 2200);
       setProgression((p) => ({ ...p, open3_tokens: response.data.open3_tokens, open5_tokens: response.data.open5_tokens }));
     } catch (error) {
       setNotice(error.response?.data?.detail || error.message || `Impossible de lancer l'ouverture ×${count}.`);
@@ -128,6 +173,7 @@ const CasesPage = () => {
             key={caseItem.id}
             case={caseItem}
             onOpen={handleOpenCase}
+            onPreview={handlePreviewOpen}
             balance={balance}
             onMultiOpen={handleMultiOpen}
             open3Tokens={progression.open3_tokens || 0}
@@ -135,6 +181,12 @@ const CasesPage = () => {
           />
         ))}
       </div>
+
+      {showCaseSplash && splashCaseData && <CaseOpeningSplashUnified caseData={splashCaseData} />}
+
+      {previewCase && (
+        <CasePreviewModal caseData={previewCase} onClose={() => setPreviewCase(null)} onOpen={handleOpenFromPreview} externalLoading={previewLoading} />
+      )}
 
       {/* Case Opening Animation Overlay */}
       {showAnimation && (

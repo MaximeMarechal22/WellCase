@@ -139,6 +139,7 @@ const CaseOpeningAnimation = ({ caseId, openingResult, onComplete, onClose }) =>
                 <ImageWithFallback src={resolveItemImage(item)} alt={item.name} className="opening-item-image" />
                 <div className="item-name" title={item.name}>{item.name}</div>
                 <div className={`item-rarity ${rarityClass(item.rarity)}`}>{item.rarity}</div>
+                {Number.isFinite(Number(item.probability)) && <small className="opening-item-probability">{Number(item.probability).toFixed(2)}% chance</small>}
                 <small className="opening-item-value">{money(item.virtual_value)}</small>
               </div>
             </div>
@@ -151,8 +152,8 @@ const CaseOpeningAnimation = ({ caseId, openingResult, onComplete, onClose }) =>
       {isFinished && (
         <div className="opening-result-panel">
           <div className="opening-result-main">
-            <div className="won-item-glow"><div className="won-item-rays" /><ImageWithFallback src={normalizeImage(wonItem.image_url)} alt={wonItem.name} className="won-item-image" /></div>
-            <div className="won-item-copy"><span className="status-label win">DROP CONFIRMÉ</span><div className="won-item-name">{wonItem.name}</div><div className={`won-item-rarity ${rarityClass(wonItem.rarity)}`}>{wonItem.rarity}</div></div>
+            <div className="won-item-glow"><div className="won-item-rays" /><ImageWithFallback src={resolveItemImage(wonItem)} alt={wonItem.name} className="won-item-image" /></div>
+            <div className="won-item-copy"><span className="status-label win">DROP CONFIRMÉ</span><div className="won-item-name">{wonItem.name}</div>{openingResult?.condition && <div className="opening-condition">{openingResult.condition}</div>}<div className={`won-item-rarity ${rarityClass(wonItem.rarity)}`}>{wonItem.rarity}</div></div>
           </div>
           <div className="opening-earnings">
             <div><span>PRIX DE LA CAISSE</span><strong>- {money(casePrice)}</strong></div>

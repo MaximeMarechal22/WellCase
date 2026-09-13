@@ -67,6 +67,18 @@ def admin_role(user_id: int, payload: dict, current_user: user.User = Depends(ge
     db.commit()
     return {"user_id": target.id, "is_admin": target.is_admin}
 
+
+@router.post("/catalog/repair")
+def repair_catalog(current_user: user.User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    try:
+        from ..catalog_sync import sync_catalog
+        sync_catalog(db)
+        count = db.query(case.Case).filter(case.Case.is_active.is_(True)).count()
+        return {"ok": True, "active_cases": count}
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(500, f"Catalogue repair failed: {exc}") from exc
+
 @router.get("/activity")
 def admin_activity(current_user: user.User = Depends(get_admin_user), db: Session = Depends(get_db)):
     openings = db.query(case_opening.CaseOpening).order_by(case_opening.CaseOpening.opened_at.desc()).limit(12).all()

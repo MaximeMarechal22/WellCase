@@ -1,77 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { casesAPI, dailyRewardsAPI, openingsAPI, progressionAPI } from '../services/api';
-import CaseCard from '../components/CaseCard';
+import { dailyRewardsAPI } from '../services/api';
 import RewardCard from '../components/RewardCard';
-import CaseOpeningAnimation from '../components/CaseOpeningAnimation';
-import ImageWithFallback from '../components/ImageWithFallback';
 
 const HomePage = () => {
   const { balance, updateBalance } = useAuth();
 
-  const [cases, setCases] = useState([]);
   const [dailyReward, setDailyReward] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  const [showAnimation, setShowAnimation] = useState(false);
-  const [animationCaseId, setAnimationCaseId] = useState(null);
-  const [wonItemFromAnimation, setWonItemFromAnimation] = useState(null);
-  const [openingResult, setOpeningResult] = useState(null);
-  const [openingRequest, setOpeningRequest] = useState(false);
-  const [progression, setProgression] = useState({open3_tokens:0, open5_tokens:0});
-  const [batchResults, setBatchResults] = useState([]);
-  const [batchIndex, setBatchIndex] = useState(0);
   const [notice, setNotice] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const casesResponse = await casesAPI.getCases();
-        setCases(casesResponse.data);
-        try { const p = await progressionAPI.getOverview(); setProgression(p.data); } catch(e) { console.warn('progression', e); }
-
         const rewardResponse = await dailyRewardsAPI.getStatus();
         setDailyReward(rewardResponse.data?.can_claim ? rewardResponse.data : null);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching daily reward:', error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
-
-  const handleOpenCase = async (caseId) => {
-    if (openingRequest) return;
-    setOpeningRequest(true);
-    try {
-      const response = await openingsAPI.openCase(caseId);
-      setOpeningResult(response.data);
-      setAnimationCaseId(caseId);
-      setShowAnimation(true);
-    } catch (error) {
-      setNotice(error.response?.data?.detail || error.message || "Impossible d'ouvrir la caisse.");
-    } finally {
-      setOpeningRequest(false);
-    }
-  };
-
-  const handleMultiOpen = async (caseId, count) => {
-    if (openingRequest) return; setOpeningRequest(true);
-    try { const r = await openingsAPI.openBatch(caseId, count); setBatchResults(r.data.results||[]); setBatchIndex(0); setOpeningResult(r.data.results?.[0]||null); setAnimationCaseId(caseId); setShowAnimation(true); setProgression(p=>({...p,open3_tokens:r.data.open3_tokens,open5_tokens:r.data.open5_tokens})); }
-    catch(e){ setNotice(e.response?.data?.detail || `Impossible de lancer l'ouverture ×${count}.`); } finally { setOpeningRequest(false); }
-  };
-
-  const handleAnimationComplete = async (wonItem) => {
-    setWonItemFromAnimation(wonItem);
-    await updateBalance();
-  };
-
-  const handleAnimationClose = () => {
-    if (batchResults.length && batchIndex < batchResults.length - 1) { const next=batchIndex+1; setBatchIndex(next); setOpeningResult(batchResults[next]); return; }
-    setShowAnimation(false); setWonItemFromAnimation(null); setOpeningResult(null); setAnimationCaseId(null); setBatchResults([]); setBatchIndex(0); updateBalance();
-  };
 
   const handleClaimDailyReward = async () => {
     try {
@@ -90,97 +41,78 @@ const HomePage = () => {
 
   if (loading) {
     return (
-      <div className="container">
-        <div className="text-center py-5">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-        </div>
+      <div className="container home-page">
+        <div className="home-loading"><div className="spinner-border text-primary" role="status"><span className="visually-hidden">Chargement…</span></div></div>
       </div>
     );
   }
 
   return (
-    <div className="container">
-      {notice && <div className="inline-notice home-notice">{notice}<button onClick={()=>setNotice('')}>×</button></div>}
+    <div className="container home-page home-page-clean">
+      {notice && <div className="inline-notice home-notice">{notice}<button onClick={() => setNotice('')}>×</button></div>}
 
-      <section className="home-hero">
-        <div className="home-hero-copy">
-          <div className="section-kicker">WELLCASE / OPEN. WIN. REPEAT.</div>
-          <h1>Le prochain <span>gros drop</span><br />commence ici.</h1>
-          <p>Ouvre, upgrade, construis ton inventaire et bats ton pote sur 48 heures.</p>
-          <div className="hero-actions">
-            <a href="#popular-cases" className="hero-primary">VOIR LES CAISSES <b>↗</b></a>
-            <div className="hero-stat"><strong>{Number(balance || 0).toLocaleString('fr-FR')} €</strong><span>BANKROLL ACTUEL</span></div>
+      <section className="home-clean-hero">
+        <div className="home-clean-hero-copy">
+          <div className="section-kicker">WELLCASE / DROP CENTER</div>
+          <div className="home-clean-status"><i /> SYSTÈME EN LIGNE <span>DROP ENGINE ACTIF</span></div>
+          <h1>Le risque.<br /><span>Le frisson.</span><br />Le jackpot.</h1>
+          <p>Une expérience de cases pensée autour de la transparence : consulte tes probabilités, maîtrise ton bankroll et ouvre uniquement quand le moment est bon.</p>
+          <div className="home-clean-actions">
+            <a href="/cases" className="home-clean-primary">EXPLORER LES CAISSES <b>↗</b></a>
+            <a href="/guide" className="home-clean-secondary">COMMENT ÇA MARCHE <b>?</b></a>
           </div>
         </div>
-        <div className="home-hero-art">
-          <div className="hero-orb hero-orb-one" />
-          <div className="hero-orb hero-orb-two" />
-          <div className="hero-case-stack">
-            <div className="hero-case-back" />
-            <div className="hero-case-front"><span>W</span><small>WELLCASE</small></div>
+
+        <div className="home-clean-visual" aria-hidden="true">
+          <div className="home-clean-grid" />
+          <div className="home-clean-orbit orbit-one" /><div className="home-clean-orbit orbit-two" />
+          <div className="home-clean-core">
+            <div className="home-clean-core-mark">W</div>
+            <span>WELLCASE</span>
+            <small>DROP ENGINE</small>
           </div>
-          <div className="hero-watermark">48H<br/><span>DUEL</span></div>
+          <div className="home-clean-signal signal-one"><b>01</b><span>CHOISIR</span></div>
+          <div className="home-clean-signal signal-two"><b>02</b><span>VÉRIFIER</span></div>
+          <div className="home-clean-signal signal-three"><b>03</b><span>OUVRIR</span></div>
         </div>
       </section>
 
-      <section className="duel-strip home-duel">
-        <div className="duel-icon">VS</div>
-        <div><strong>TON POTE EST-IL MEILLEUR QUE TOI ?</strong><span>Lancez un challenge de 48H : skins gagnés, upgrades et bankroll comptent.</span></div>
-        <div className="duel-rule">48H / 1 GAGNANT</div>
+      <section className="home-clean-stats">
+        <div><span>SOLDE DISPONIBLE</span><strong>{Number(balance || 0).toLocaleString('fr-FR')} €</strong><small>Ton bankroll en temps réel</small></div>
+        <div><span>PROBABILITÉS</span><strong>100%</strong><small>Visibles avant chaque ouverture</small></div>
+        <div><span>RÉSULTAT</span><strong>SERVER-SIDE</strong><small>Le drop est déterminé avant la roulette</small></div>
       </section>
 
-      {/* Daily Reward */}
+      <section className="home-clean-panels">
+        <div className="home-clean-panel">
+          <span className="section-kicker">01 / TRANSPARENCE</span>
+          <h2>Chaque drop a son taux.</h2>
+          <p>Un clic sur une caisse suffit pour ouvrir son aperçu. Tu vois directement la probabilité de chaque item avant de prendre ta décision.</p>
+          <a href="/cases">VOIR LE CATALOGUE <b>→</b></a>
+        </div>
+        <div className="home-clean-panel home-clean-panel-accent">
+          <span className="section-kicker">02 / BANKROLL</span>
+          <h2>Joue ton rythme.</h2>
+          <p>Garde une lecture claire de ton solde, de tes gains et de ton inventaire. Ici, l'interface reste au service du drop.</p>
+          <a href="/inventory">MON INVENTAIRE <b>→</b></a>
+        </div>
+      </section>
+
+      <section className="home-clean-bottom">
+        <div><span>WELLCASE</span><strong>NOISE OFF. DROP ON.</strong></div>
+        <a href="/history">CONSULTER MON HISTORIQUE ↗</a>
+      </section>
+
       {dailyReward?.can_claim ? (
-        <div className="row mb-5">
-          <div className="col-md-4">
-            <RewardCard
-              dayStreak={dailyReward.day_streak || dailyReward.dayStreak || 0}
-              rewardAmount={dailyReward.reward_amount || 0}
-              onClaim={handleClaimDailyReward}
-            />
-          </div>
+        <div className="home-clean-daily">
+          <RewardCard dayStreak={dailyReward.day_streak || dailyReward.dayStreak || 0} rewardAmount={dailyReward.reward_amount || 0} onClaim={handleClaimDailyReward} />
         </div>
       ) : dailyReward ? (
         <div className="daily-claimed-strip" aria-live="polite">✓ Bonus quotidien déjà récupéré — reviens demain pour la prochaine récompense.</div>
       ) : null}
-
-      {/* Popular Cases */}
-      <div className="mb-5" id="popular-cases">
-        <div className="section-heading"><div><div className="section-kicker">THE DROP WALL</div><h2>Caisses populaires</h2></div><span>CHOISIS TON RISQUE</span></div>
-
-        <div className="cases-grid-premium">
-          {cases.map((caseItem) => (
-            <CaseCard key={caseItem.id} case={caseItem} onOpen={handleOpenCase} onMultiOpen={handleMultiOpen} balance={balance} open3Tokens={progression.open3_tokens || 0} open5Tokens={progression.open5_tokens || 0} />
-          ))}
-        </div>
-      </div>
-
-      {/* Case Opening Animation */}
-      {showAnimation && (
-        <div
-          className="opening-overlay active"
-        >
-          <div
-            className="opening-overlay-content"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="batch-opening-indicator">{batchResults.length > 1 ? `OUVERTURE ${batchIndex + 1} / ${batchResults.length}` : "OUVERTURE"}</div>
-            <CaseOpeningAnimation
-              caseId={animationCaseId}
-              openingResult={openingResult}
-              onComplete={handleAnimationComplete}
-              onClose={handleAnimationClose}
-            />
-          </div>
-        </div>
-      )}
-
-
-
     </div>
   );
+
 };
 
 export default HomePage;

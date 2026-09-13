@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: wellcase
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: FRONTEND_URLS
+        value: https://wellcase.onrender.com
+      - key: FRONTEND_ORIGIN_REGEX
+        value: https://.*\\.onrender\\.com
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: DATABASE_URL
+        sync: false

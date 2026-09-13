@@ -101,24 +101,3 @@ async def get_history(current_user: user.User = Depends(get_current_active_user)
 
     events.sort(key=lambda event: event["timestamp"] or 0, reverse=True)
     return events
-
-@router.get("/admin/stats")
-async def get_admin_stats(current_user: user.User = Depends(get_admin_user), db: Session = Depends(get_db)):
-    total_users = db.query(user.User).count()
-    total_cases_opened = db.query(case_opening.CaseOpening).count()
-    total_upgrades = db.query(upgrade.Upgrade).count()
-    total_virtual_currency = db.query(user.User).with_entities(func.sum(user.User.virtual_balance)).scalar() or 0
-    return {
-        "totalUsers": total_users,
-        "totalCasesOpened": total_cases_opened,
-        "totalUpgradesPerformed": total_upgrades,
-        "totalVirtualCurrency": total_virtual_currency,
-    }
-
-@router.get("/admin/users", response_model=List[user_schema.User])
-async def get_admin_users(current_user: user.User = Depends(get_admin_user), db: Session = Depends(get_db)):
-    return db.query(user.User).all()
-
-@router.get("/admin/cases")
-async def get_admin_cases(current_user: user.User = Depends(get_admin_user), db: Session = Depends(get_db)):
-    return db.query(case.Case).all()

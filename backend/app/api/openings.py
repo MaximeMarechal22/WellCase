@@ -7,6 +7,8 @@ from ..core.security import get_current_active_user
 from ..db.session import SessionLocal
 from ..models import case, case_item, case_opening, inventory, user
 from ..progression_service import award_xp, collection_completion
+from ..drop_rates import weighted_relations, choose_case_item as choose_case_item_for_price_shared
+from ..condition_service import roll_condition, effective_value
 
 router = APIRouter()
 
@@ -20,27 +22,6 @@ def get_db():
 
 
 
-
-# Economy tuning: profitable/high-value drops are intentionally less frequent.
-# The original probability remains stored in the DB, while this multiplier is
-# applied at roll time and when probabilities are displayed to the player.
-def economy_weight(base_probability: float, item_value: float, case_price: float) -> float:
-    ratio = float(item_value or 0) / max(float(case_price or 1), 1.0)
-    if ratio <= 0.75: multiplier = 1.10
-    elif ratio <= 1.0: multiplier = 0.95
-    elif ratio <= 1.5: multiplier = 0.55
-    elif ratio <= 2.0: multiplier = 0.30
-    elif ratio <= 4.0: multiplier = 0.12
-    else: multiplier = 0.035
-    return max(float(base_probability or 0), 0.0) * multiplier
-
-
-def weighted_relations(relations, case_price):
-    valid = [
-        relation for relation in relations
-        if relation.item and relation.item.is_active and float(relation.probability or 0) > 0
-    ]
-    return [(relation, economy_weight(relation.probability, relation.item.virtual_value, case_price)) for relation in valid]
 
 def choose_case_item(case_items):
     valid = [
@@ -62,14 +43,10 @@ def wealth_snapshot(db, user_id, balance):
     return float(total), float(balance) + float(total)
 
 def choose_case_item_for_price(case_items, case_price):
-    weighted = weighted_relations(case_items, case_price)
-    if not weighted:
+    selected = choose_case_item_for_price_shared(case_items, case_price)
+    if selected is None:
         raise HTTPException(status_code=400, detail="This case has no available rewards.")
-    return random.choices(
-        [relation for relation, _ in weighted],
-        weights=[weight for _, weight in weighted],
-        k=1,
-    )[0]
+    return selected
 
 
 @router.post("/{case_id}")
@@ -117,18 +94,20 @@ async def open_case(
         )
         db.add(db_opening)
 
+        condition = roll_condition(price)
         db_inventory = (
             db.query(inventory.Inventory)
             .filter(
                 inventory.Inventory.user_id == db_user.id,
                 inventory.Inventory.item_id == db_item.id,
+                inventory.Inventory.condition == condition["name"],
             )
             .first()
         )
         if db_inventory:
             db_inventory.quantity += 1
         else:
-            db.add(inventory.Inventory(user_id=db_user.id, item_id=db_item.id, quantity=1))
+            db.add(inventory.Inventory(user_id=db_user.id, item_id=db_item.id, quantity=1, condition=condition["name"]))
 
         db_user.virtual_balance = balance_after
         xp_gain = int(round(100 * (1 + 0.05 * int(db_user.prestige_level or 0))))
@@ -161,6 +140,7 @@ async def open_case(
         for relation, weight in weighted
     ]
 
+    effective_drop_value = effective_value(db_item.virtual_value, condition["name"])
     return {
         "id": db_opening.id,
         "user_id": db_user.id,
@@ -173,9 +153,12 @@ async def open_case(
         "case_price": price,
         "case_name": db_case.name,
         "case_image_url": db_case.image_url,
-        "item_value": float(db_item.virtual_value),
-        "net_gain": float(db_item.virtual_value) - price,
-        "resale_value": round(float(db_item.virtual_value) * 0.75, 2),
+        "item_value": effective_drop_value,
+        "base_item_value": float(db_item.virtual_value),
+        "net_gain": effective_drop_value - price,
+        "resale_value": round(effective_drop_value * 0.75, 2),
+        "condition": condition["name"],
+        "condition_multiplier": condition["multiplier"],
         "inventory_added": True,
         "inventory_value_after": inventory_value_after,
         "total_wealth_after": total_wealth_after,
@@ -186,7 +169,8 @@ async def open_case(
             "category": db_item.category,
             "weapon_class": db_item.weapon_class,
             "rarity": db_item.rarity,
-            "virtual_value": db_item.virtual_value,
+            "virtual_value": effective_drop_value,
+            "base_virtual_value": db_item.virtual_value,
             "image_url": db_item.image_url,
             "color": db_item.color,
         },
@@ -224,16 +208,18 @@ async def open_case_batch(
             balance -= float(db_case.price)
             db_opening = case_opening.CaseOpening(user_id=db_user.id, case_id=db_case.id, item_id=db_item.id, virtual_balance_before=before, virtual_balance_after=balance)
             db.add(db_opening)
-            owned = db.query(inventory.Inventory).filter(inventory.Inventory.user_id == db_user.id, inventory.Inventory.item_id == db_item.id).first()
+            condition = roll_condition(float(db_case.price))
+            owned = db.query(inventory.Inventory).filter(inventory.Inventory.user_id == db_user.id, inventory.Inventory.item_id == db_item.id, inventory.Inventory.condition == condition["name"]).first()
             if owned:
                 owned.quantity += 1
             else:
-                db.add(inventory.Inventory(user_id=db_user.id, item_id=db_item.id, quantity=1))
+                db.add(inventory.Inventory(user_id=db_user.id, item_id=db_item.id, quantity=1, condition=condition["name"]))
             weighted = weighted_relations(relations, float(db_case.price))
             total_weight = sum(weight for _, weight in weighted) or 1.0
             selected_weight = next((weight for relation, weight in weighted if relation.id == selected.id), 0)
             rewards = [{"id": r.item.id, "name": r.item.name, "category": r.item.category, "weapon_class": r.item.weapon_class, "rarity": r.item.rarity, "virtual_value": r.item.virtual_value, "image_url": r.item.image_url, "color": r.item.color, "probability": weight / total_weight * 100} for r, weight in weighted]
-            results.append({"id": None, "user_id": db_user.id, "case_id": db_case.id, "item_id": db_item.id, "probability": selected_weight / total_weight * 100, "virtual_balance_before": before, "virtual_balance_after": balance, "case_price": float(db_case.price), "case_name": db_case.name, "case_image_url": db_case.image_url, "item_value": float(db_item.virtual_value), "net_gain": float(db_item.virtual_value) - float(db_case.price), "rewards": rewards, "item": {"id": db_item.id, "name": db_item.name, "category": db_item.category, "weapon_class": db_item.weapon_class, "rarity": db_item.rarity, "virtual_value": db_item.virtual_value, "image_url": db_item.image_url, "color": db_item.color}})
+            effective_drop_value = effective_value(db_item.virtual_value, condition["name"])
+            results.append({"id": None, "user_id": db_user.id, "case_id": db_case.id, "item_id": db_item.id, "probability": selected_weight / total_weight * 100, "virtual_balance_before": before, "virtual_balance_after": balance, "case_price": float(db_case.price), "case_name": db_case.name, "case_image_url": db_case.image_url, "item_value": effective_drop_value, "base_item_value": float(db_item.virtual_value), "net_gain": effective_drop_value - float(db_case.price), "condition": condition["name"], "condition_multiplier": condition["multiplier"], "rewards": rewards, "item": {"id": db_item.id, "name": db_item.name, "category": db_item.category, "weapon_class": db_item.weapon_class, "rarity": db_item.rarity, "virtual_value": effective_drop_value, "base_virtual_value": db_item.virtual_value, "image_url": db_item.image_url, "color": db_item.color}})
         db_user.virtual_balance = balance
         xp_gain = 0
         for batch_item in results:

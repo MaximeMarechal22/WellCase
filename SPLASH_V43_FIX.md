@@ -1,0 +1,1 @@
+V43 splash: Arsenal case openings are rendered entirely with React/CSS. No type_* or arsenal_splash_* image asset is used by the splash component. Canonical themes are matched by case name for Rifle Arsenal, Knife Arsenal, and Gloves Arsenal.

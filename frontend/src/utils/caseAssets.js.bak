@@ -1,0 +1,104 @@
+import Advanced from '../assets/cases/advanced.png';
+import AkSpecialist from '../assets/cases/ak_specialist.png';
+import AwpSpecialist from '../assets/cases/awp_specialist.png';
+import Beginner from '../assets/cases/beginner.png';
+import Covert from '../assets/cases/covert.png';
+import Elite from '../assets/cases/elite.png';
+import Knife from '../assets/cases/knife.png';
+import Neon from '../assets/cases/neon.png';
+import Supreme from '../assets/cases/supreme.png';
+import TypeGloves from '../assets/cases/type_gloves.png';
+import TypeKnives from '../assets/cases/type_knives.png';
+import TypePistols from '../assets/cases/type_pistols.png';
+import TypeRifles from '../assets/cases/type_rifles.png';
+import TypeSnipers from '../assets/cases/type_snipers.png';
+import RifleArsenalSplash from '../assets/cases/arsenal_splash_rifles.png';
+import KnifeArsenalSplash from '../assets/cases/arsenal_splash_knives.png';
+import GlovesArsenalSplash from '../assets/cases/arsenal_splash_gloves.png';
+
+const normalize = (value) => String(value || '')
+  .trim()
+  .replace(/\s+/g, ' ')
+  .toLowerCase();
+
+const byName = {
+  'Beginner Case': Beginner,
+  'Advanced Case': Advanced,
+  'Elite Case': Elite,
+  'AK Specialist Case': AkSpecialist,
+  'AWP Specialist Case': AwpSpecialist,
+  'Pistol Arsenal Case': TypePistols,
+  'Rifle Arsenal Case': TypeRifles,
+  'Sniper Arsenal Case': TypeSnipers,
+  'Knife Arsenal Case': TypeKnives,
+  'Gloves Arsenal Case': TypeGloves,
+  'Neon Case': Neon,
+  'Knife Case': Knife,
+  'Covert Case': Covert,
+  'Supreme Case': Supreme,
+};
+
+// Production databases may contain old/truncated names from previous seeds.
+// Keep aliases so splash/card assets never depend on image_url values.
+const aliases = {
+  'pistol arsenal': TypePistols,
+  'pistol arsenal case': TypePistols,
+  'rifle arsenal': TypeRifles,
+  'rifle arsenal case': TypeRifles,
+  'assault rifle arsenal case': TypeRifles,
+  'sniper arsenal': TypeSnipers,
+  'sniper arsenal case': TypeSnipers,
+  'knife arsenal': TypeKnives,
+  'knife arsenal case': TypeKnives,
+  'knives arsenal case': TypeKnives,
+  'gloves arsenal': TypeGloves,
+  'gloves arsenal case': TypeGloves,
+  'glove arsenal case': TypeGloves,
+};
+
+
+const splashByName = {
+  'Rifle Arsenal Case': RifleArsenalSplash,
+  'Knife Arsenal Case': KnifeArsenalSplash,
+  'Gloves Arsenal Case': GlovesArsenalSplash,
+};
+
+const normalizedMap = Object.fromEntries([
+  ...Object.entries(byName),
+  ...Object.entries(aliases),
+].map(([name, src]) => [normalize(name), src]));
+
+const fromImageUrl = (value) => {
+  const raw = normalize(value);
+  if (raw.includes('type_rifles')) return TypeRifles;
+  if (raw.includes('type_knives')) return TypeKnives;
+  if (raw.includes('type_gloves')) return TypeGloves;
+  if (raw.includes('type_pistols')) return TypePistols;
+  if (raw.includes('type_snipers')) return TypeSnipers;
+  if (raw.includes('/neon')) return Neon;
+  if (raw.includes('/knife')) return Knife;
+  if (raw.includes('/covert')) return Covert;
+  if (raw.includes('/supreme')) return Supreme;
+  return '';
+};
+
+export const resolveCaseSplashImage = (value) => {
+  if (!value) return "";
+  const name = typeof value === "object" ? value.name : value;
+  return splashByName[Object.keys(splashByName).find((key) => normalize(key) === normalize(name))] || resolveCaseImage(value);
+};
+
+export const resolveCaseImage = (value) => {
+  if (!value) return '';
+  if (typeof value === 'object') {
+    const byExactName = normalizedMap[normalize(value.name)];
+    if (byExactName) return byExactName;
+    const byUrl = fromImageUrl(value.image_url || value.image);
+    if (byUrl) return byUrl;
+    return '';
+  }
+  return normalizedMap[normalize(value)] || fromImageUrl(value) || '';
+};
+
+export { splashByName };
+export default byName;

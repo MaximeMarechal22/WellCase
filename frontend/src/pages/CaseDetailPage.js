@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { casesAPI, openingsAPI } from '../services/api';
 import ImageWithFallback from '../components/ImageWithFallback';
 import { resolveCaseImage } from '../utils/caseAssets';
+import CaseOpeningSplashUnified from '../components/CaseOpeningSplashUnified';
 import { resolveItemImage } from '../utils/itemAssets';
 import CaseOpeningAnimation from '../components/CaseOpeningAnimation';
 
@@ -17,10 +18,14 @@ const CaseDetailPage = () => {
   const [error, setError] = useState(null);
 
   const [showAnimation, setShowAnimation] = useState(false);
+  const [showCaseSplash, setShowCaseSplash] = useState(false);
   const [animationCaseId, setAnimationCaseId] = useState(null);
   const [openingResult, setOpeningResult] = useState(null);
   const [openingRequest, setOpeningRequest] = useState(false);
   const [notice, setNotice] = useState('');
+  const splashTimerRef = useRef(null);
+
+  useEffect(() => () => clearTimeout(splashTimerRef.current), []);
 
   useEffect(() => {
     const fetchCaseDetails = async () => {
@@ -47,7 +52,9 @@ const CaseDetailPage = () => {
       const response = await openingsAPI.openCase(caseData.id);
       setOpeningResult(response.data);
       setAnimationCaseId(caseData.id);
-      setShowAnimation(true);
+      setShowCaseSplash(true);
+      clearTimeout(splashTimerRef.current);
+      splashTimerRef.current = setTimeout(() => { setShowCaseSplash(false); setShowAnimation(true); }, 2200);
     } catch (error) {
       setNotice(error.response?.data?.detail || error.message || "Impossible d'ouvrir la caisse.");
     } finally {
@@ -251,6 +258,9 @@ const CaseDetailPage = () => {
         </div>
 
       </div>
+
+
+      {showCaseSplash && <CaseOpeningSplashUnified caseData={caseData} />}
 
       {/* Case Opening Animation */}
       {showAnimation && (

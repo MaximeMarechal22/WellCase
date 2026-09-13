@@ -5,6 +5,7 @@ from ..db.session import SessionLocal
 from ..core.security import get_current_active_user
 from ..models import market_listing, inventory, user, item
 from ..schemas import market as market_schema
+from ..condition_service import effective_value
 
 router = APIRouter()
 
@@ -17,7 +18,7 @@ def serialize(row, current_id):
     return {
         'id': row.id, 'seller_id': row.seller_id,
         'seller_username': row.seller.username if row.seller else 'Player',
-        'item_id': row.item_id, 'price': float(row.price), 'created_at': row.created_at,
+        'item_id': row.item_id, 'price': float(row.price), 'condition': row.condition or 'État moyen', 'created_at': row.created_at,
         'item': row.item, 'is_mine': row.seller_id == current_id,
     }
 
@@ -52,6 +53,7 @@ def create_listing(payload: market_schema.MarketListingCreate, current_user: use
         seller_id=current_user.id,
         item_id=item_id,
         price=price,
+        condition=inv.condition or 'État moyen',
         is_active=True,
     )
     inv.quantity -= 1
@@ -69,6 +71,7 @@ def create_listing(payload: market_schema.MarketListingCreate, current_user: use
             'price': price,
             'created_at': row.created_at,
             'item': item_obj,
+            'condition': inv.condition,
             'is_mine': True,
         }
         db.commit()
@@ -89,9 +92,9 @@ def buy_listing(listing_id:int,current_user:user.User=Depends(get_current_active
     try:
         buyer.virtual_balance=float(buyer.virtual_balance or 0)-price
         seller.virtual_balance=float(seller.virtual_balance or 0)+price
-        owned=db.query(inventory.Inventory).filter(inventory.Inventory.user_id==buyer.id,inventory.Inventory.item_id==row.item_id).first()
+        owned=db.query(inventory.Inventory).filter(inventory.Inventory.user_id==buyer.id,inventory.Inventory.item_id==row.item_id,inventory.Inventory.condition==row.condition).first()
         if owned: owned.quantity += 1
-        else: db.add(inventory.Inventory(user_id=buyer.id,item_id=row.item_id,quantity=1))
+        else: db.add(inventory.Inventory(user_id=buyer.id,item_id=row.item_id,quantity=1,condition=row.condition or 'État moyen'))
         row.is_active=False
         db.commit()
     except Exception:
@@ -102,8 +105,8 @@ def buy_listing(listing_id:int,current_user:user.User=Depends(get_current_active
 def cancel_listing(listing_id:int,current_user:user.User=Depends(get_current_active_user),db:Session=Depends(get_db)):
     row=db.query(market_listing.MarketListing).filter(market_listing.MarketListing.id==listing_id,market_listing.MarketListing.seller_id==current_user.id,market_listing.MarketListing.is_active.is_(True)).first()
     if not row: raise HTTPException(404,'Annonce introuvable.')
-    owned=db.query(inventory.Inventory).filter(inventory.Inventory.user_id==current_user.id,inventory.Inventory.item_id==row.item_id).first()
+    owned=db.query(inventory.Inventory).filter(inventory.Inventory.user_id==current_user.id,inventory.Inventory.item_id==row.item_id,inventory.Inventory.condition==row.condition).first()
     if owned: owned.quantity += 1
-    else: db.add(inventory.Inventory(user_id=current_user.id,item_id=row.item_id,quantity=1))
+    else: db.add(inventory.Inventory(user_id=current_user.id,item_id=row.item_id,quantity=1,condition=row.condition or 'État moyen'))
     row.is_active=False; db.commit()
     return {'success':True}

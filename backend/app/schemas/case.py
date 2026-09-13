@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 
 class CaseBase(BaseModel):
@@ -46,6 +46,16 @@ class CaseItem(CaseItemBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+class CaseQualityChance(BaseModel):
+    name: str
+    key: str
+    probability: float = Field(ge=0)
+    # Accept both the current name and legacy payloads.
+    condition_multiplier: float = Field(
+        validation_alias=AliasChoices("condition_multiplier", "multiplier"),
+        serialization_alias="condition_multiplier",
+    )
+
 class CaseContentItem(BaseModel):
     id: int
     name: str
@@ -57,7 +67,9 @@ class CaseContentItem(BaseModel):
     float_value: Optional[float] = None
     color: Optional[str] = None
     probability: float = Field(ge=0)
+    quality_chances: List[CaseQualityChance] = Field(default_factory=list)
 
 
 class CaseWithItems(Case):
     items: List[CaseContentItem] = Field(default_factory=list)
+    quality_chances: List[CaseQualityChance] = Field(default_factory=list)

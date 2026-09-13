@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const API_BASE_URL =
   process.env.REACT_APP_API_URL ||
-  (process.env.NODE_ENV === 'production' ? '/api' : 'http://127.0.0.1:8000');
+  (process.env.NODE_ENV === 'production' ? '' : 'http://127.0.0.1:8000');
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -44,6 +44,7 @@ export const authAPI = {
 export const casesAPI = {
   getCases: () => api.get('/cases/'),
   getCaseById: (caseId) => api.get(`/cases/${caseId}`),
+  getCasePreview: (caseId) => api.get(`/cases/preview/${caseId}`),
 };
 
 // Inventory endpoints
@@ -91,6 +92,7 @@ export const adminAPI = {
   adjustBalance: (userId, amount, mode = 'add') => api.post(`/admin/users/${userId}/balance`, { amount, mode }),
   setStatus: (userId, is_active) => api.post(`/admin/users/${userId}/status`, { is_active }),
   setAdmin: (userId, is_admin) => api.post(`/admin/users/${userId}/admin`, { is_admin }),
+  repairCatalog: () => api.post('/admin/catalog/repair'),
 };
 
 // Dashboard endpoints

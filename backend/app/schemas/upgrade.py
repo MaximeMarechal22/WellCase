@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -8,6 +9,7 @@ from .item import Item
 class UpgradeCreate(BaseModel):
     original_item_id: int
     target_item_id: int
+    inventory_id: Optional[int] = None
 
 
 class Upgrade(BaseModel):
@@ -20,6 +22,7 @@ class Upgrade(BaseModel):
     virtual_balance_before: float
     virtual_balance_after: float
     upgraded_at: datetime
+    landing_angle: float = 0.0
 
     model_config = ConfigDict(from_attributes=True)
 

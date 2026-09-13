@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { dashboardAPI } from '../services/api';
 import ImageWithFallback from '../components/ImageWithFallback';
+import { resolveItemImage } from '../utils/itemAssets';
 import './HistoryPage.css';
 
 const HistoryPage = () => {
@@ -60,7 +61,8 @@ const HistoryPage = () => {
           const isOpening = entry.type === 'opening';
           const isUpgrade = entry.type === 'upgrade';
           const success = entry.wasSuccessful;
-          const image = isOpening ? entry.itemImageUrl : isUpgrade ? (success ? entry.targetImageUrl : entry.originalImageUrl) : null;
+          const imageItem = isOpening ? { id: entry.itemId, name: entry.itemName, image_url: entry.itemImageUrl } : isUpgrade ? (success ? { id: entry.targetItemId, name: entry.targetName, image_url: entry.targetImageUrl } : { id: entry.originalItemId, name: entry.originalName, image_url: entry.originalImageUrl }) : null;
+          const image = imageItem ? resolveItemImage(imageItem) : null;
           return (
             <article className={`history-entry ${entry.type} ${isUpgrade ? (success ? 'success' : 'failed') : ''}`} key={entry.id}>
               <div className="history-entry-icon">{isOpening ? '▣' : isUpgrade ? '↗' : '★'}</div>

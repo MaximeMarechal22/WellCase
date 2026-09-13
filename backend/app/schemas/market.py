@@ -12,6 +12,7 @@ class MarketListing(BaseModel):
     seller_username: str
     item_id: int
     price: float
+    condition: str = "État moyen"
     created_at: datetime
     item: Item
     is_mine: bool = False

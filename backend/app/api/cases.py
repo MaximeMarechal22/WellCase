@@ -3,10 +3,12 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 
-from ..core.security import get_current_active_user
 from ..db.session import SessionLocal
-from ..models import case, case_item, user
+from ..models import case, case_item
 from ..schemas import case as case_schema
+from ..drop_rates import weighted_relations
+from ..condition_service import condition_distribution
+from ..core.security import get_current_active_user
 
 router = APIRouter()
 
@@ -30,29 +32,41 @@ def get_db():
 
 
 def _serialize_case(db_case: case.Case) -> dict:
-    """Expose case_items as a frontend-friendly flat items array."""
+    """Expose case items with the exact server-side probabilities used for rolls."""
     items = []
-    valid_relations = [
-        relation for relation in db_case.case_items
-        if relation.item and relation.item.is_active and float(relation.probability or 0) > 0
-    ]
-    weights=[float(relation.probability)*economy_multiplier(relation.item.virtual_value,db_case.price) for relation in valid_relations]
-    total_weight = sum(weights) or 1.0
-    for relation, weight in zip(valid_relations, weights):
-        items.append(
+    weighted = weighted_relations(
+        [relation for relation in db_case.case_items if relation.item],
+        float(db_case.price),
+    )
+    total_weight = sum(weight for _, weight in weighted) or 1.0
+    for relation, weight in weighted:
+        item = relation.item
+        if not item.is_active:
+            continue
+        items.append({
+            "id": item.id,
+            "name": item.name,
+            "category": item.category,
+            "weapon_class": item.weapon_class,
+            "rarity": item.rarity,
+            "virtual_value": item.virtual_value,
+            "image_url": item.image_url,
+            "float_value": item.float_value,
+            "color": item.color,
+            "probability": weight / total_weight * 100.0,
+        })
+    quality = condition_distribution(float(db_case.price))
+    for item in items:
+        item["quality_chances"] = [
             {
-                "id": relation.item.id,
-                "name": relation.item.name,
-                "category": relation.item.category,
-                "weapon_class": relation.item.weapon_class,
-                "rarity": relation.item.rarity,
-                "virtual_value": relation.item.virtual_value,
-                "image_url": relation.item.image_url,
-                "float_value": relation.item.float_value,
-                "color": relation.item.color,
-                "probability": weight / total_weight * 100,
+                "name": row["name"],
+                "key": row["key"],
+                "probability": round(float(item["probability"]) * float(row["probability"]) / 100.0, 4),
+                "condition_multiplier": row["multiplier"],
+                "multiplier": row["multiplier"],
             }
-        )
+            for row in quality
+        ]
     return {
         "id": db_case.id,
         "name": db_case.name,
@@ -63,32 +77,86 @@ def _serialize_case(db_case: case.Case) -> dict:
         "is_active": db_case.is_active,
         "created_at": db_case.created_at,
         "updated_at": db_case.updated_at,
+        "quality_chances": quality,
         "items": items,
     }
 
 
-@router.get("/", response_model=List[case_schema.Case])
+@router.get("/", response_model=List[case_schema.CaseWithItems])
 async def read_cases(
     skip: int = 0,
     limit: int = 100,
-    current_user: user.User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
-    return (
+    # Always reconcile the catalog before reading it. This repairs a remote DB
+    # that already has the original cases but is missing newer cases/relations.
+    try:
+        from ..catalog_sync import sync_catalog
+        sync_catalog(db)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Catalogue indisponible: {exc}") from exc
+
+    rows = (
         db.query(case.Case)
+        .options(joinedload(case.Case.case_items).joinedload(case_item.CaseItem.item))
         .filter(case.Case.is_active.is_(True))
         .offset(skip)
         .limit(limit)
         .all()
     )
+    return [_serialize_case(row) for row in rows]
 
+
+@router.get("/preview/{case_id}", response_model=case_schema.CaseWithItems)
+async def preview_case(
+    case_id: int,
+    db: Session = Depends(get_db),
+):
+    # Keep direct preview links consistent with GET /cases/: repair/sync the
+    # catalog before looking up the requested case.
+    try:
+        from ..catalog_sync import sync_catalog
+        sync_catalog(db)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Catalogue indisponible: {exc}") from exc
+
+    db_case = (
+        db.query(case.Case)
+        .options(joinedload(case.Case.case_items).joinedload(case_item.CaseItem.item))
+        .filter(case.Case.id == case_id, case.Case.is_active.is_(True))
+        .first()
+    )
+    if db_case is None:
+        raise HTTPException(status_code=404, detail="Case not found")
+    payload = _serialize_case(db_case)
+    quality = condition_distribution(float(db_case.price))
+    for item in payload.get("items", []):
+        item["quality_chances"] = [
+            {
+                "name": row["name"],
+                "key": row["key"],
+                "probability": round(float(item["probability"]) * float(row["probability"]) / 100.0, 4),
+                "condition_multiplier": row["multiplier"],
+                "multiplier": row["multiplier"],
+            }
+            for row in quality
+        ]
+    payload["quality_chances"] = quality
+    payload["items"] = sorted(payload.get("items", []), key=lambda item: float(item.get("probability") or 0), reverse=True)
+    return payload
 
 @router.get("/{case_id}", response_model=case_schema.CaseWithItems)
 async def read_case(
     case_id: int,
-    current_user: user.User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
+    # Direct case pages must see the same repaired catalogue and drop weights as the list/preview endpoints.
+    try:
+        from ..catalog_sync import sync_catalog
+        sync_catalog(db)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Catalogue indisponible: {exc}") from exc
+
     db_case = (
         db.query(case.Case)
         .options(joinedload(case.Case.case_items).joinedload(case_item.CaseItem.item))
