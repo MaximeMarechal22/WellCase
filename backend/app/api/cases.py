@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 
 from ..db.session import SessionLocal
-from ..models import case, case_item
+from ..models import case, case_item, user
 from ..schemas import case as case_schema
 from ..drop_rates import weighted_relations
 from ..condition_service import condition_distribution
