@@ -2,9 +2,7 @@
   "buildCommand": "cd frontend && npm ci && npm run build",
   "outputDirectory": "frontend/build",
   "functions": {
-    "api/index.py": {
-      "runtime": "python3.12"
-    }
+    "api/index.py": {}
   },
   "rewrites": [
     {
