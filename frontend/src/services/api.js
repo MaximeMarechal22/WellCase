@@ -13,14 +13,15 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
+
     if (token) {
+      config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // Response interceptor
@@ -98,7 +99,15 @@ export const adminAPI = {
 // Dashboard endpoints
 export const dashboardAPI = {
   getBalance: () => api.get('/balance'),
-  getHistory: () => api.get('/history'),
+  getHistory: () => {
+    const token = localStorage.getItem('token');
+
+    return api.get('/history', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
 };
 
 export default api;
