@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540">
+<defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#05080e"/><stop offset=".52" stop-color="#0b101a"/><stop offset="1" stop-color="#03050a"/></linearGradient>
+ <linearGradient id="case" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#263241"/><stop offset=".42" stop-color="#0f1620"/><stop offset="1" stop-color="#05080d"/></linearGradient>
+ <linearGradient id="edge" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#16a6ff"/><stop offset=".5" stop-color="#9b5cff"/><stop offset="1" stop-color="#16a6ff"/></linearGradient>
+ <radialGradient id="glow"><stop stop-color="#16a6ff" stop-opacity=".55"/><stop offset="1" stop-color="#16a6ff" stop-opacity="0"/></radialGradient>
+ <filter id="blur"><feGaussianBlur stdDeviation="30"/></filter>
+ <filter id="shadow"><feDropShadow dx="0" dy="24" stdDeviation="20" flood-color="#000" flood-opacity=".8"/></filter>
+</defs>
+<rect width="960" height="540" fill="url(#bg)"/>
+<ellipse cx="480" cy="310" rx="370" ry="190" fill="url(#glow)" filter="url(#blur)" opacity=".55"/>
+<path d="M0 455 L260 360 L510 455 L760 345 L960 430 V540 H0Z" fill="#16a6ff" opacity=".05"/>
+<g filter="url(#shadow)">
+ <rect x="180" y="178" width="600" height="245" rx="28" fill="url(#case)" stroke="url(#edge)" stroke-width="5"/>
+ <rect x="200" y="196" width="560" height="205" rx="20" fill="none" stroke="#ffffff" stroke-opacity=".08" stroke-width="2"/>
+ <path d="M180 228 H780" stroke="url(#edge)" stroke-width="5" opacity=".75"/>
+ <path d="M180 390 H780" stroke="#000" stroke-opacity=".7" stroke-width="10"/>
+ <rect x="455" y="213" width="50" height="34" rx="7" fill="#05080d" stroke="#16a6ff" stroke-width="3"/>
+ <rect x="400" y="337" width="160" height="22" rx="8" fill="#070a10" stroke="#fff" stroke-opacity=".08"/>
+ <circle cx="480" cy="303" r="72" fill="#060a10" stroke="#16a6ff" stroke-opacity=".55" stroke-width="3"/>
+ <circle cx="480" cy="303" r="58" fill="none" stroke="#9b5cff" stroke-opacity=".22" stroke-width="2"/>
+ <text x="480" y="321" text-anchor="middle" font-family="Arial, sans-serif" font-size="62" font-weight="900" fill="#9b5cff">N</text>
+ <path d="M235 248 L265 218 M695 248 L725 218" stroke="#fff" stroke-opacity=".13" stroke-width="6"/>
+</g>
+<text x="480" y="105" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="800" letter-spacing="8" fill="#d9e0ea">WELLCASE</text>
+<text x="480" y="470" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="900" letter-spacing="5" fill="#fff">NEON CASE</text>
+<text x="480" y="500" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" letter-spacing="4" fill="#718096">OPEN. WIN. REPEAT.</text>
+</svg>

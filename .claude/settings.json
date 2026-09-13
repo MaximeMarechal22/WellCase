@@ -1,0 +1,47 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uvicorn app.main:app --reload)",
+      "Bash(curl -s -X POST \"http://localhost:8000/openings/1\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTc4OTA4NTk4Nn0.v58LI9QyAcKK2K7JV0TR6zxtzrj37MsJ51GikTyUyjE\")",
+      "Bash(curl -v -X POST \"http://localhost:8000/openings/1\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTc4OTA4NTk4Nn0.v58LI9QyAcKK2K7JV0TR6zxtzrj37MsJ51GikTyUyjE\")",
+      "Bash(pkill -f uvicorn)",
+      "Bash(taskkill /f /im uvicorn.exe)",
+      "Bash(curl -s -X POST \"http://localhost:8000/openings/1\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTc4OTA4NjcxOH0.PgJ2f_Dw1Hg_H6zoLn1HOthTggNHZqFRJnFYdFRr40Y\")",
+      "Bash(curl -v -X POST \"http://localhost:8000/openings/1\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTc4OTA4NjcxOH0.PgJ2f_Dw1Hg_H6zoLn1HOthTggNHZqFRJnFYdFRr40Y\")",
+      "Bash(curl -s -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTc4OTA4NjcxOH0.PgJ2f_Dw1Hg_H6zoLn1HOthTggNHZqFRJnFYdFRr40Y\" http://localhost:8000/admin/stats)",
+      "Bash(python -c \"from app.api.dashboard import router; print\\('Dashboard router imported successfully'\\)\")",
+      "Bash(python -c \"from app.api.openings import router; print\\('Openings router imported successfully'\\)\")",
+      "Bash(python -c \"from app.models import case_opening, upgrade; print\\('Models imported successfully'\\)\")",
+      "Bash(curl -s -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTc4OTA4NjcxOH0.PgJ2f_Dw1Hg_H6zoLn1HOthTggNHZqFRJnFYdFRr40Y\" http://localhost:8000/balance)",
+      "Bash(python init_db.py)",
+      "Bash(uvicorn app.main:app --reload --port 8001)",
+      "Bash(curl -v -s -X POST \"http://127.0.0.1:8001/openings/1\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTc4OTA4NzgwM30.2JcqriqV4t8ZsPDJJK0UsMHiPtj9HSnxwx__OaeDzVo\")",
+      "Bash(tee response.txt)",
+      "Bash(dir E:\\\\WellCase\\\\backend\\\\*.db)",
+      "Bash(rtk ls *)",
+      "Bash(sqlite3 caseforge.db \".tables\")",
+      "Bash(python -c \"import sqlite3; conn = sqlite3.connect\\('caseforge.db'\\); cursor = conn.cursor\\(\\); cursor.execute\\(\\\\\"SELECT name FROM sqlite_master WHERE type='table';\\\\\"\\); print\\(cursor.fetchall\\(\\)\\)\")",
+      "Bash(python -c \"import sqlite3; conn = sqlite3.connect\\('caseforge.db'\\); cursor = conn.cursor\\(\\); cursor.execute\\(\\\\\"PRAGMA table_info\\(inventory\\);\\\\\"\\); print\\(cursor.fetchall\\(\\)\\)\")",
+      "Bash(del caseforge.db)",
+      "Bash(rtk grep *)",
+      "Bash(kill -9 2549 2698 2710 2626 1265 2596)",
+      "Bash(python init_db_new.py)",
+      "Bash(python -c \"import sqlite3; conn = sqlite3.connect\\('caseforge_new.db'\\); cursor = conn.cursor\\(\\); cursor.execute\\(\\\\\"SELECT name FROM sqlite_master WHERE type='table';\\\\\"\\); print\\(cursor.fetchall\\(\\)\\)\")",
+      "Bash(sed -n '100,112p' /e/WellCase/backend/app/api/openings.py)",
+      "Read(//e/WellCase/backend/app/api/**)",
+      "Bash(sed -n '18,112p' /e/WellCase/backend/app/api/openings.py)",
+      "Bash(sed -n '111p' /e/WellCase/backend/app/api/openings.py)",
+      "Bash(sed -n '109,115p' /e/WellCase/backend/app/api/openings.py)",
+      "Bash(sed -n '111,120p' /e/WellCase/backend/app/api/openings.py)",
+      "Bash(taskkill /f /im uvicorn.exe >nul 2>&1)",
+      "Bash(rtk read *)",
+      "Bash(npm ls *)"
+    ],
+    "additionalDirectories": [
+      "E:\\WellCase\\backend"
+    ]
+  },
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": true
+  }
+}

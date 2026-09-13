@@ -1,0 +1,18 @@
+WELLCASE — VISUELS INTEGRES
+
+Les visuels ont été intégrés directement dans :
+frontend/public/images/cases/
+frontend/public/images/items/
+
+Les chemins déjà présents dans la base de données correspondent à ces fichiers,
+par exemple :
+/images/cases/beginner.png
+/images/items/ak_redline.png
+
+Aucune modification de chemin DB n'est nécessaire.
+
+Lancer le frontend depuis frontend/ :
+npm start
+
+Build production :
+npm run build

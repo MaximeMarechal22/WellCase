@@ -1,0 +1,19 @@
+WELLCASE — DA / ANIMATIONS INTEGRES
+
+Cette version contient :
+- DA dark cinematic rouge/noir
+- splash screen WellCase
+- animations d'entrée/stagger
+- hover premium sur les caisses
+- effets lumineux sur les boutons
+- overlay d'ouverture cinématique
+- roulette horizontale avec pointer/glow
+- reveal du skin gagnant
+- support prefers-reduced-motion
+
+La logique backend du tirage n'a pas été modifiée : le backend reste la source
+de vérité du skin gagnant.
+
+Lancer :
+cd frontend
+npm start

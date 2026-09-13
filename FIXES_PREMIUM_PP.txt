@@ -1,0 +1,12 @@
+WellCase Premium ++
+
+Correctifs inclus :
+- /history : correction UnboundLocalError sur upgrade
+- /upgrades : endpoint transactionnel et validation de propriété
+- roulette : état ROLLING -> RESULTAT, winner backend comme source de vérité
+- seul le slot sous le pointeur est gagnant
+- inventaire : retrait du Float affiché
+- DA premium dark/red, micro-interactions et animations
+- splash cinématique conservé
+
+Redémarrer backend et frontend après remplacement du projet.

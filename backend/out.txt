@@ -1,0 +1,4 @@
+INFO:     127.0.0.1:55352 - "POST /auth/users/ HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:55358 - "POST /auth/token HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:55434 - "POST /auth/users/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55477 - "POST /auth/token HTTP/1.1" 200 OK
