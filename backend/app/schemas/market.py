@@ -13,6 +13,7 @@ class MarketListing(BaseModel):
     item_id: int
     price: float
     condition: str = "État moyen"
+    effective_value: float = 0.0
     created_at: datetime
     item: Item
     is_mine: bool = False

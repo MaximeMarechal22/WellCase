@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, ForeignKey, DateTime, Float, String
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
+from ..condition_service import condition_multiplier, effective_value
 from ..db.base import Base
 
 class Inventory(Base):
@@ -16,3 +17,12 @@ class Inventory(Base):
 
     # Relationship to the Item model
     item = relationship("Item", foreign_keys=[item_id])
+
+    @property
+    def condition_multiplier(self) -> float:
+        return condition_multiplier(self.condition)
+
+    @property
+    def effective_value(self) -> float:
+        base_value = self.item.virtual_value if self.item is not None else 0.0
+        return effective_value(base_value, self.condition)

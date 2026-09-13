@@ -6,11 +6,24 @@ import './UpgradePage.css';
 import { resolveItemImage } from '../utils/itemAssets';
 
 const SPIN_MS = 5000;
+const RARITY_UPGRADE_MULTIPLIERS = {
+  'Mil-Spec': 1.00,
+  'Restricted': 0.90,
+  'Classified': 0.78,
+  'Covert': 0.65,
+  'Contraband': 0.52,
+  'Extraordinary': 0.42,
+  'Legendary': 0.32,
+  'Mythic': 0.22,
+};
+
 const chanceFor = (source, target, upgradeLevel = 0, sourceEffectiveValue = null) => {
   if (!source || !target) return 0;
   const sourceValue = Number(sourceEffectiveValue ?? source.virtual_value);
   const base = Math.min(95, Math.max(1, sourceValue / Number(target.virtual_value) * 100));
-  return Math.max(0.5, Math.min(95, base * Math.pow(0.85, Math.max(0, Number(upgradeLevel || 0)))));
+  const levelPenalty = Math.pow(0.85, Math.max(0, Number(upgradeLevel || 0)));
+  const rarityPenalty = Number(RARITY_UPGRADE_MULTIPLIERS[source.rarity] ?? 0.75);
+  return Math.max(0.5, Math.min(95, base * levelPenalty * rarityPenalty));
 };
 const money = (v) => `${Number(v || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 
@@ -40,9 +53,12 @@ const UpgradePage = () => {
   const sourceRow = inventory.find((row) => row.id === sourceRowId) || null;
   const source = sourceRow?.item || null;
   const sourceEffectiveValue = Number(sourceRow?.effective_value || source?.virtual_value || 0);
-  const targets = useMemo(() => source ? allItems.filter((item) => item.id !== source.id && item.is_active !== false && Number(item.virtual_value) > sourceEffectiveValue).sort((a,b) => Number(a.virtual_value)-Number(b.virtual_value)) : [], [allItems, source, sourceEffectiveValue]);
+  const conditionMultiplier = Number(sourceRow?.condition_multiplier || 1);
+  const targetEffectiveValue = (item) => Number(item?.virtual_value || 0) * conditionMultiplier;
+  const targets = useMemo(() => source ? allItems.filter((item) => item.id !== source.id && item.is_active !== false && targetEffectiveValue(item) > sourceEffectiveValue).sort((a,b) => targetEffectiveValue(a)-targetEffectiveValue(b)) : [], [allItems, source, sourceEffectiveValue, conditionMultiplier]);
   const target = targets.find((item) => item.id === targetId) || null;
-  const chance = chanceFor(source, target, sourceRow?.upgrade_level || 0, sourceEffectiveValue);
+  const targetValue = target ? targetEffectiveValue(target) : 0;
+  const chance = chanceFor(source, target ? { ...target, virtual_value: targetValue } : null, sourceRow?.upgrade_level || 0, sourceEffectiveValue);
   const chanceHue = Math.max(0, Math.min(120, Number(chance || 0) * 1.2));
   const chanceColor = `hsl(${chanceHue} 88% 56%)`;
   const chanceGlow = `hsla(${chanceHue} 88% 56% / .22)`;
@@ -106,12 +122,12 @@ const UpgradePage = () => {
         <div className="wheel-caption">{phase === 'spinning' ? 'LA FLÈCHE TOURNE…' : phase === 'result' ? (resultSuccess ? 'ZONE VERTE ATTEINTE' : 'HORS DE LA ZONE VERTE') : 'LA ZONE VERTE = TA CHANCE'}</div>
       </div>
 
-      <div className="upgrade-item-card target-card"><span className="machine-label">CIBLE</span>{target ? <><div className="upgrade-art"><ImageWithFallback src={resolveItemImage(target)} alt={target.name} /></div><h3>{target.name}</h3><strong>{money(target.virtual_value)}</strong><small>{chance.toFixed(1)}% de réussite</small></> : <div className="upgrade-placeholder">Choisis une cible<br/>plus chère</div>}</div>
+      <div className="upgrade-item-card target-card"><span className="machine-label">CIBLE</span>{target ? <><div className="upgrade-art"><ImageWithFallback src={resolveItemImage(target)} alt={target.name} /></div><h3>{target.name}</h3><strong>{money(targetValue)}</strong><small>{chance.toFixed(1)}% de réussite</small></> : <div className="upgrade-placeholder">Choisis une cible<br/>plus chère</div>}</div>
     </section>
 
     {phase === 'idle' && <>
-      <section className="upgrade-selector-grid"><div className="selector-panel"><div className="selector-title"><span>01</span><div><b>Votre skin</b><small>{sourceRow?.upgrade_level ? `Niveau d'amélioration ${sourceRow.upgrade_level}` : 'Une skin que vous possédez'}</small></div></div><div className="skin-grid">{inventory.map((row) => <button key={row.id} className={sourceRowId === row.id ? 'active' : ''} onClick={() => selectSource(row.id)}><ImageWithFallback src={resolveItemImage(row.item)} alt="" /><div><b>{row.item?.name}</b><span>{money(row.item?.virtual_value)}</span></div>{row.quantity > 1 && <em>x{row.quantity}</em>}{row.upgrade_level > 0 && <em className="upgrade-level-pill">U{row.upgrade_level}</em>}</button>)}</div></div>
-        <div className="selector-panel"><div className="selector-title"><span>02</span><div><b>Skin cible</b><small>{source ? `${targets.length} cibles plus chères` : 'Sélectionne une skin d’abord'}</small></div></div><div className="skin-grid">{targets.map((item) => <button key={item.id} className={targetId === item.id ? 'active' : ''} onClick={() => selectTarget(item.id)}><ImageWithFallback src={resolveItemImage(item)} alt="" /><div><b>{item.name}</b><span>{money(item.virtual_value)} · {chanceFor(source, item, sourceRow?.upgrade_level || 0, sourceEffectiveValue).toFixed(1)}%</span></div></button>)}</div></div></section>
+      <section className="upgrade-selector-grid"><div className="selector-panel"><div className="selector-title"><span>01</span><div><b>Votre skin</b><small>{sourceRow?.upgrade_level ? `Niveau d'amélioration ${sourceRow.upgrade_level}` : 'Une skin que vous possédez'}</small></div></div><div className="skin-grid">{inventory.map((row) => <button key={row.id} className={sourceRowId === row.id ? 'active' : ''} onClick={() => selectSource(row.id)}><ImageWithFallback src={resolveItemImage(row.item)} alt="" /><div><b>{row.item?.name}</b><span>{money(row.effective_value || row.item?.virtual_value)}</span></div>{row.quantity > 1 && <em>x{row.quantity}</em>}{row.upgrade_level > 0 && <em className="upgrade-level-pill">U{row.upgrade_level}</em>}</button>)}</div></div>
+        <div className="selector-panel"><div className="selector-title"><span>02</span><div><b>Skin cible</b><small>{source ? `${targets.length} cibles plus chères` : 'Sélectionne une skin d’abord'}</small></div></div><div className="skin-grid">{targets.map((item) => <button key={item.id} className={targetId === item.id ? 'active' : ''} onClick={() => selectTarget(item.id)}><ImageWithFallback src={resolveItemImage(item)} alt="" /><div><b>{item.name}</b><span>{money(targetEffectiveValue(item))} · {chanceFor(source, { ...item, virtual_value: targetEffectiveValue(item) }, sourceRow?.upgrade_level || 0, sourceEffectiveValue).toFixed(1)}%</span></div></button>)}</div></div></section>
       <button className="upgrade-main-btn" disabled={!source || !target || busy} onClick={runUpgrade}><span>LANCER L’UPGRADE</span><small>{target ? `${chance.toFixed(1)}% de chance d’atteindre la zone verte` : 'Choisis une cible plus chère'}</small></button>
     </>}
 

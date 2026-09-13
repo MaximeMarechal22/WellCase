@@ -21,15 +21,42 @@ def get_db():
         db.close()
 
 
-def calculate_success_chance(original_value: float, target_value: float, upgrade_level: int = 0) -> float:
+RARITY_UPGRADE_MULTIPLIERS = {
+    # Higher rarity = harder to risk upgrading.
+    "Mil-Spec": 1.00,
+    "Restricted": 0.90,
+    "Classified": 0.78,
+    "Covert": 0.65,
+    "Contraband": 0.52,
+    "Extraordinary": 0.42,
+    "Legendary": 0.32,
+    "Mythic": 0.22,
+}
+
+
+def rarity_upgrade_multiplier(rarity: str | None) -> float:
+    return float(RARITY_UPGRADE_MULTIPLIERS.get(str(rarity or "").strip(), 0.75))
+
+
+def calculate_success_chance(
+    original_value: float,
+    target_value: float,
+    upgrade_level: int = 0,
+    source_rarity: str | None = None,
+) -> float:
     if original_value <= 0 or target_value <= 0 or target_value <= original_value:
         return 0.0
+
     base = min(95.0, max(1.0, (original_value / target_value) * 100.0))
     level = max(0, int(upgrade_level or 0))
+
     # Each successful improvement makes the next attempt harder.
-    # A 15% relative reduction is applied per previous successful improvement.
-    penalty = 0.85 ** level
-    return max(0.5, min(95.0, base * penalty))
+    level_penalty = 0.85 ** level
+
+    # Rare skins are progressively harder to upgrade.
+    rarity_penalty = rarity_upgrade_multiplier(source_rarity)
+
+    return max(0.5, min(95.0, base * level_penalty * rarity_penalty))
 
 
 @router.post("/", response_model=upgrade_schema.Upgrade)
@@ -54,8 +81,6 @@ async def perform_upgrade(
     if not source or not target:
         raise HTTPException(status_code=404, detail="Item not found.")
 
-    if float(target.virtual_value) <= float(source.virtual_value):
-        raise HTTPException(status_code=400, detail="Target must be more valuable than the source item.")
 
     owned_query = db.query(inventory.Inventory).filter(
         inventory.Inventory.user_id == current_user.id,
@@ -74,7 +99,16 @@ async def perform_upgrade(
 
     source_level = int(getattr(owned, 'upgrade_level', 0) or 0)
     source_effective_value = effective_value(source.virtual_value, owned.condition)
-    chance = calculate_success_chance(source_effective_value, float(target.virtual_value), source_level)
+    target_effective_value = effective_value(target.virtual_value, owned.condition)
+    if target_effective_value <= source_effective_value:
+        raise HTTPException(status_code=400, detail="Target must be more valuable than the source item.")
+
+    chance = calculate_success_chance(
+        source_effective_value,
+        target_effective_value,
+        source_level,
+        source.rarity,
+    )
     if chance <= 0:
         raise HTTPException(status_code=400, detail="Cette cible n'est pas éligible pour un upgrade.")
     roll = random.uniform(0.0, 100.0)

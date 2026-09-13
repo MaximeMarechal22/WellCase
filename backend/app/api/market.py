@@ -18,7 +18,7 @@ def serialize(row, current_id):
     return {
         'id': row.id, 'seller_id': row.seller_id,
         'seller_username': row.seller.username if row.seller else 'Player',
-        'item_id': row.item_id, 'price': float(row.price), 'condition': row.condition or 'État moyen', 'created_at': row.created_at,
+        'item_id': row.item_id, 'price': float(row.price), 'condition': row.condition or 'État moyen', 'effective_value': effective_value(row.item.virtual_value, row.condition), 'created_at': row.created_at,
         'item': row.item, 'is_mine': row.seller_id == current_id,
     }
 
@@ -72,6 +72,7 @@ def create_listing(payload: market_schema.MarketListingCreate, current_user: use
             'created_at': row.created_at,
             'item': item_obj,
             'condition': inv.condition,
+            'effective_value': effective_value(item_obj.virtual_value, inv.condition),
             'is_mine': True,
         }
         db.commit()

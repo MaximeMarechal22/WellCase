@@ -115,7 +115,7 @@ const CaseOpeningAnimation = ({ caseId, openingResult, onComplete, onClose }) =>
 
   const isFinished = phase === 'finished';
   const casePrice = Number(result.case_price ?? caseData.price ?? 0);
-  const itemValue = Number(wonItem.virtual_value || 0);
+  const itemValue = Number(result.item_value ?? wonItem.virtual_value ?? 0);
   const netGain = Number(result.net_gain ?? (itemValue - casePrice));
   const rarityClass = (rarity) => rarity ? `rarity-${rarity.toLowerCase().replace(/\s+/g, '-')}` : 'rarity-default';
 
