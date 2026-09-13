@@ -94,10 +94,35 @@ app.include_router(market.router, prefix="/market", tags=["market"])
 app.include_router(collections.router, prefix="/collections", tags=["collections"])
 
 # Single-service Render deployment: serve the compiled React app and its assets
-# from the same origin as FastAPI. This prevents stale /public paths and /api
-# routing mismatches on Render.
+# from the same origin as FastAPI.
 if FRONTEND_BUILD.exists():
+    from fastapi.responses import FileResponse
     from fastapi.staticfiles import StaticFiles
-    app.mount("/images", StaticFiles(directory=str(FRONTEND_BUILD / "images")), name="images")
-    app.mount("/static", StaticFiles(directory=str(FRONTEND_BUILD / "static")), name="static")
-    app.mount("/", StaticFiles(directory=str(FRONTEND_BUILD), html=True), name="frontend")
+
+    app.mount(
+        "/images",
+        StaticFiles(directory=str(FRONTEND_BUILD / "images")),
+        name="images",
+    )
+
+    app.mount(
+        "/static",
+        StaticFiles(directory=str(FRONTEND_BUILD / "static")),
+        name="static",
+    )
+
+    @app.get("/{full_path:path}")
+    async def serve_react_app(full_path: str):
+        """
+        React Router fallback.
+
+        API routes are registered above this catch-all, so /cases, /inventory,
+        /openings, etc. continue to be handled by FastAPI.
+        Unknown frontend routes receive index.html so React Router can handle them.
+        """
+        requested_file = FRONTEND_BUILD / full_path
+
+        if requested_file.is_file():
+            return FileResponse(requested_file)
+
+        return FileResponse(FRONTEND_BUILD / "index.html")
